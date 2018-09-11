@@ -5,9 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Client;
-using OmniSharp.Extensions.LanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Mef;
 using OmniSharp.Models.AutoComplete;
 using OmniSharp.Models.TypeLookup;
@@ -74,8 +75,8 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             _autoCompleteHandler = autoCompleteHandler;
             _documentSelector = documentSelector;
         }
-
-        public async Task<CompletionList> Handle(TextDocumentPositionParams request, CancellationToken token)
+        
+        public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
             var omnisharpRequest = new AutoCompleteRequest()
             {

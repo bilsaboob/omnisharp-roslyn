@@ -37,6 +37,11 @@ namespace OmniSharp
             {
                 foreach (var assembly in provider.Assemblies)
                 {
+                    if (assembly == null)
+                    {
+                        continue;
+                    }
+
                     try
                     {
                         var exportedTypes = assembly.ExportedTypes;

@@ -5,9 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Client;
-using OmniSharp.Extensions.LanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Models.Rename;
 
 namespace OmniSharp.LanguageServerProtocol.Handlers
@@ -71,6 +72,13 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             {
                 Changes = changes,
                 DocumentChanges = new Container<TextDocumentEdit>(documentEdits)
+            };
+        }
+
+        RenameRegistrationOptions IRegistration<RenameRegistrationOptions>.GetRegistrationOptions()
+        {
+            return new RenameRegistrationOptions() {
+                DocumentSelector = _documentSelector
             };
         }
 

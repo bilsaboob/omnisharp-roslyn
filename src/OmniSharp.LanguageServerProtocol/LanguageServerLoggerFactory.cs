@@ -2,12 +2,13 @@ using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using OmniSharp.Extensions.LanguageServer;
+using OmniSharp.Extensions.LanguageServer.Server;
 using OmniSharp.LanguageServerProtocol.Logging;
 using OmniSharp.Services;
 
 namespace OmniSharp.LanguageServerProtocol
 {
-    class LanguageServerLoggerFactory : ILoggerFactory
+    public class LanguageServerLoggerFactory : ILoggerFactory
     {
         private readonly LanguageServerLoggerProvider _provider;
 
@@ -16,7 +17,7 @@ namespace OmniSharp.LanguageServerProtocol
             _provider = new LanguageServerLoggerProvider();
         }
         public void AddProvider(ILoggerProvider provider) { }
-        public void AddProvider(LanguageServer server, OmniSharpEnvironment environment)
+        public void AddProvider(ILanguageServer server, OmniSharpEnvironment environment)
         {
             if (environment.LogLevel <= LogLevel.Debug)
                 _provider.SetProvider(server, (category, level) => true);

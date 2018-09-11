@@ -2,10 +2,12 @@
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Client;
-using OmniSharp.Extensions.LanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Models;
 using OmniSharp.Models.MembersFlat;
 using OmniSharp.Models.MembersTree;
@@ -47,8 +49,8 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             _membersAsTreeHandler = membersAsTreeHandler;
             _documentSelector = documentSelector;
         }
-
-        public async Task<SymbolInformationContainer> Handle(DocumentSymbolParams request, CancellationToken token)
+        
+        public async Task<DocumentSymbolInformationContainer> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
         {
             var omnisharpRequest = new MembersTreeRequest()
             {
@@ -56,7 +58,7 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             };
 
             var omnisharpResponse = await _membersAsTreeHandler.Handle(omnisharpRequest);
-            var symbolInformationContainer = new List<SymbolInformation>();
+            var symbolInformationContainer = new List<DocumentSymbolInformation>();
 
             foreach (var node in omnisharpResponse.TopLevelTypeDefinitions)
             {
@@ -79,10 +81,9 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             _capability = capability;
         }
 
-        private static void ToDocumentSymbol(FileMemberElement node, List<SymbolInformation> symbolInformationContainer, string containerName = null)
+        private static void ToDocumentSymbol(FileMemberElement node, List<DocumentSymbolInformation> symbolInformationContainer, string containerName = null)
         {
-            var symbolInformation = new SymbolInformation
-            {
+            var symbolInformation = new DocumentSymbolInformation {
                 Name = node.Location.Text,
                 Kind = Kinds[node.Kind],
                 Location = new Location

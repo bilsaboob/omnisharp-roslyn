@@ -164,7 +164,7 @@ namespace OmniSharp
             // load them if they depend on OmniSharp.
 
             var assemblies = new List<Assembly>();
-            var dependencyContext = DependencyContext.Default;
+            /*var dependencyContext = DependencyContext.Default;
 
             foreach (var runtimeLibrary in dependencyContext.RuntimeLibraries)
             {
@@ -181,9 +181,29 @@ namespace OmniSharp
                         }
                     }
                 }
+            }*/
+
+            var entryAssembly = Assembly.GetEntryAssembly();
+            foreach (var referencedAssembly in entryAssembly.GetReferencedAssemblies())
+            {
+                if (DependsOnOmniSharp(referencedAssembly))
+                {
+                    var assembly = assemblyLoader.Load(referencedAssembly);
+                    if (assembly != null)
+                    {
+                        assemblies.Add(assembly);
+
+                        logger.LogDebug($"Loaded {assembly.FullName}");
+                    }
+                }
             }
 
             return assemblies;
+        }
+
+        private bool DependsOnOmniSharp(AssemblyName referencedAssembly)
+        {
+            return referencedAssembly.Name.StartsWith("OmniSharp");
         }
 
         private static bool DependsOnOmniSharp(RuntimeLibrary runtimeLibrary)

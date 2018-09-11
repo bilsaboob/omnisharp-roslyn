@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Client;
-using OmniSharp.Extensions.LanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Mef;
 using OmniSharp.Models.GotoDefinition;
 using static OmniSharp.LanguageServerProtocol.Helpers;
@@ -42,8 +43,8 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
                 DocumentSelector = _documentSelector
             };
         }
-
-        public async Task<LocationOrLocations> Handle(TextDocumentPositionParams request, CancellationToken token)
+        
+        public async Task<LocationOrLocations> Handle(DefinitionParams request, CancellationToken cancellationToken)
         {
             var omnisharpRequest = new GotoDefinitionRequest()
             {
@@ -70,5 +71,6 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
         {
             _capability = capability;
         }
+        
     }
 }

@@ -4,13 +4,13 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OmniSharp.Extensions.Embedded.MediatR;
 using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Abstractions;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Client;
-using OmniSharp.Extensions.LanguageServer.Capabilities.Server;
-using OmniSharp.Extensions.LanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
-using OmniSharp.Extensions.LanguageServer.Protocol.Document;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 using OmniSharp.Mef;
 using OmniSharp.Models;
 using OmniSharp.Models.FileClose;
@@ -75,6 +75,8 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             }
         };
 
+        public TextDocumentSyncKind Change => Options.Change;
+
         public TextDocumentAttributes GetTextDocumentAttributes(Uri uri)
         {
             var document = _workspace.GetDocument(Helpers.FromUri(uri));
@@ -82,17 +84,19 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             return new TextDocumentAttributes(uri, "");
         }
 
-        public Task Handle(DidChangeTextDocumentParams notification)
+        public async Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken cancellationToken)
         {
             var contentChanges = notification.ContentChanges.ToArray();
             if (contentChanges.Length == 1 && contentChanges[0].Range == null)
             {
                 var change = contentChanges[0];
-                return _bufferHandler.Handle(new UpdateBufferRequest()
+                await _bufferHandler.Handle(new UpdateBufferRequest()
                 {
                     FileName = Helpers.FromUri(notification.TextDocument.Uri),
                     Buffer = change.Text
                 });
+
+                return Unit.Value;
             }
 
             var changes = contentChanges
@@ -106,41 +110,55 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
                 })
                 .ToArray();
 
-            return _bufferHandler.Handle(new UpdateBufferRequest()
+            await _bufferHandler.Handle(new UpdateBufferRequest()
             {
                 FileName = Helpers.FromUri(notification.TextDocument.Uri),
                 Changes = changes
             });
+
+            return Unit.Value;
         }
 
-        public Task Handle(DidOpenTextDocumentParams notification)
+
+        public async Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken cancellationToken)
         {
-            return _openHandler?.Handle(new FileOpenRequest()
-            {
+            var task = _openHandler?.Handle(new FileOpenRequest() {
                 Buffer = notification.TextDocument.Text,
                 FileName = Helpers.FromUri(notification.TextDocument.Uri)
-            }) ?? Task.CompletedTask;
+            });
+
+            if (task != null)
+                await task;
+
+            return Unit.Value;
         }
 
-        public Task Handle(DidCloseTextDocumentParams notification)
+
+        public async Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken cancellationToken)
         {
-            return _closeHandler?.Handle(new FileCloseRequest()
-            {
+            var task = _closeHandler?.Handle(new FileCloseRequest() {
                 FileName = Helpers.FromUri(notification.TextDocument.Uri)
-            }) ?? Task.CompletedTask;
+            });
+
+            if (task != null)
+                await task;
+
+            return Unit.Value;
         }
 
-        public Task Handle(DidSaveTextDocumentParams notification)
+
+        public async Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken cancellationToken)
         {
             if (_capability?.DidSave == true)
             {
-                return _bufferHandler.Handle(new UpdateBufferRequest()
+                await _bufferHandler.Handle(new UpdateBufferRequest()
                 {
                     FileName = Helpers.FromUri(notification.TextDocument.Uri),
                     Buffer = notification.Text
                 });
             }
-            return Task.CompletedTask;
+
+            return Unit.Value;
         }
 
         public Task Handle(WillSaveTextDocumentParams notification)
@@ -149,12 +167,19 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             if (_capability?.WillSave == true) { }
             return Task.CompletedTask;
         }
-
-        public Task Handle(WillSaveTextDocumentParams request, CancellationToken token)
+        
+        public Task<TextEditContainer> Handle(WillSaveWaitUntilTextDocumentParams request, CancellationToken cancellationToken)
         {
             // TODO: Do we have a need for this?
             if (_capability?.WillSaveWaitUntil == true) { }
-            return Task.CompletedTask;
+            return Task.FromResult(new TextEditContainer());
+        }
+
+        Task<Unit> Extensions.Embedded.MediatR.IRequestHandler<WillSaveTextDocumentParams, Unit>.Handle(WillSaveTextDocumentParams request, CancellationToken cancellationToken)
+        {
+            // TODO: Do we have a need for this?
+            if (_capability?.WillSaveWaitUntil == true) { }
+            return Unit.Task;
         }
 
         public void SetCapability(SynchronizationCapability capability)
